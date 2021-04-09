@@ -156,6 +156,7 @@ func clearCmd() *ffcli.Command {
 		Name:       "clear",
 		ShortUsage: "iridium-phonebook clear -d <device>",
 		ShortHelp:  "Delete all contacts from the Iridium phonebook",
+		FlagSet:    fs,
 		Exec: func(ctx context.Context, args []string) error {
 			if device == "" {
 				return usageError("-d <device> must be provided")
