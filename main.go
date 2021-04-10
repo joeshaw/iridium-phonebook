@@ -57,21 +57,11 @@ func dumpCmd() *ffcli.Command {
 				return usageError("-d <device> must be provided")
 			}
 
-			port, err := serial.New(serial.WithPort(device), serial.WithBaud(9600))
+			modem, cleanup, err := getModem(device)
 			if err != nil {
 				return err
 			}
-			defer port.Close()
-
-			var p io.ReadWriter = port
-			if os.Getenv("MODEM_DEBUG") != "" {
-				p = trace.New(p)
-			}
-
-			modem := at.New(p)
-			if err := modem.Init(); err != nil {
-				return err
-			}
+			defer cleanup()
 
 			pb := newPhonebook(modem)
 			for pb.Next() {
@@ -119,21 +109,11 @@ func loadCmd() *ffcli.Command {
 			}
 			defer rc.Close()
 
-			port, err := serial.New(serial.WithPort(device), serial.WithBaud(9600))
+			modem, cleanup, err := getModem(device)
 			if err != nil {
 				return err
 			}
-			defer port.Close()
-
-			var p io.ReadWriter = port
-			if os.Getenv("MODEM_DEBUG") != "" {
-				p = trace.New(p)
-			}
-
-			modem := at.New(p)
-			if err := modem.Init(); err != nil {
-				return err
-			}
+			defer cleanup()
 
 			pb := newPhonebook(modem)
 
@@ -173,21 +153,11 @@ func clearCmd() *ffcli.Command {
 				return usageError("-d <device> must be provided")
 			}
 
-			port, err := serial.New(serial.WithPort(device), serial.WithBaud(9600))
+			modem, cleanup, err := getModem(device)
 			if err != nil {
 				return err
 			}
-			defer port.Close()
-
-			var p io.ReadWriter = port
-			if os.Getenv("MODEM_DEBUG") != "" {
-				p = trace.New(p)
-			}
-
-			modem := at.New(p)
-			if err := modem.Init(); err != nil {
-				return err
-			}
+			defer cleanup()
 
 			pb := newPhonebook(modem)
 			if err := pb.DeleteAllContacts(); err != nil {
@@ -197,4 +167,30 @@ func clearCmd() *ffcli.Command {
 			return nil
 		},
 	}
+}
+
+func getModem(device string) (*at.AT, func(), error) {
+	cleanup := func() {}
+
+	port, err := serial.New(serial.WithPort(device), serial.WithBaud(9600))
+	if err != nil {
+		return nil, cleanup, err
+	}
+
+	var p io.ReadWriter = port
+	if os.Getenv("MODEM_DEBUG") != "" {
+		p = trace.New(p)
+	}
+
+	modem := at.New(p)
+	if err := modem.Init(); err != nil {
+		port.Close()
+		return nil, cleanup, err
+	}
+
+	cleanup = func() {
+		port.Close()
+	}
+
+	return modem, cleanup, err
 }
