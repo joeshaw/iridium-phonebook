@@ -12,6 +12,7 @@ import (
 	"github.com/peterbourgon/ff/v3/ffcli"
 	"github.com/warthog618/modem/at"
 	"github.com/warthog618/modem/serial"
+	"github.com/warthog618/modem/trace"
 )
 
 type usageError string
@@ -62,7 +63,12 @@ func dumpCmd() *ffcli.Command {
 			}
 			defer port.Close()
 
-			modem := at.New(port)
+			var p io.ReadWriter = port
+			if os.Getenv("MODEM_DEBUG") != "" {
+				p = trace.New(p)
+			}
+
+			modem := at.New(p)
 			if err := modem.Init(); err != nil {
 				return err
 			}
@@ -119,7 +125,12 @@ func loadCmd() *ffcli.Command {
 			}
 			defer port.Close()
 
-			modem := at.New(port)
+			var p io.ReadWriter = port
+			if os.Getenv("MODEM_DEBUG") != "" {
+				p = trace.New(p)
+			}
+
+			modem := at.New(p)
 			if err := modem.Init(); err != nil {
 				return err
 			}
@@ -168,7 +179,12 @@ func clearCmd() *ffcli.Command {
 			}
 			defer port.Close()
 
-			modem := at.New(port)
+			var p io.ReadWriter = port
+			if os.Getenv("MODEM_DEBUG") != "" {
+				p = trace.New(p)
+			}
+
+			modem := at.New(p)
 			if err := modem.Init(); err != nil {
 				return err
 			}

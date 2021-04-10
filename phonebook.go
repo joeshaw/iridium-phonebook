@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/warthog618/modem/at"
 )
@@ -146,7 +147,8 @@ func (p *phonebook) WriteContact(c *contact) error {
 
 	// This command has no output
 	command := "+CAPBW=" + strings.Join(ucs2Fields, ",")
-	_, err := p.modem.Command(command)
+	_, err := p.modem.Command(command, at.WithTimeout(10*time.Second))
+
 	return err
 }
 
